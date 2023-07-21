@@ -55,6 +55,45 @@ elif options.OURIP == None and IsOsX() == True:
     parser.print_help()
     exit(-1)
 
+# ISECURITY CODE
+
+# check if scanning network bigger than /24
+import netifaces
+addrs = netifaces.ifaddresses(options.Interface)
+mask = addrs[netifaces.AF_INET][0]['netmask']
+if int(mask.split('.')[2]) < 255:
+	sys.exit("\r%s Scanned interface netmask is bigger than /24. Can't do. :)" % color('[!]', 1, 1))
+# End 
+
+from pathlib import Path
+from datetime import date
+
+timelimit = 3600 # one hour
+file_name = "/tmp/responder.tmp"
+time_so_far = 0
+
+def create_tmp_time_file( seconds_passed=0, date_to_write=date.today()):
+	with open(file_name, "w") as tfile:
+		tfile.write("{date_to_write} {seconds_passed}")
+
+my_file = Path(file_name)
+if my_file.is_file():
+	with open(file_name, "r") as tfile:
+		words = tfile.readline().split(' ')
+		days_date, time_passed = words[0], int(words[1])
+		if days_date == str(date.today()):
+			if time_passed >= timelimit:
+				print(color("[!] Time is up: you must wait until tomorrow to run it again."))
+				sys.exit("\r%s Exiting..." % color('[!]', 1, 1))
+			else:
+				time_so_far = time_passed
+		else:
+			create_tmp_time_file()
+else:
+	create_tmp_time_file()
+
+### END ISECURITY CODE
+
 settings.init()
 settings.Config.populate(options)
 
@@ -383,8 +422,16 @@ def main():
 			from poisoners.DHCP import DHCP
 			DHCP(settings.Config.DHCP_DNS)
 
+		global time_so_far
 		while True:
 			time.sleep(1)
+			# ISECURITY CODE
+			time_so_far += 1
+			create_tmp_time_file(time_so_far)
+			if time_so_far >= timelimit:
+				sys.exit("\r%s One hour reached. Exiting..." % color('[!]', 1, 1))
+			# END
+
 
 	except KeyboardInterrupt:
 		sys.exit("\r%s Exiting..." % color('[+]', 2, 1))
