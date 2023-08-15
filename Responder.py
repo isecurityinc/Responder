@@ -74,7 +74,7 @@ time_so_far = 0
 
 def create_tmp_time_file( seconds_passed=0, date_to_write=date.today()):
 	with open(file_name, "w") as tfile:
-		tfile.write("{date_to_write} {seconds_passed}")
+		tfile.write("{} {}".format(date_to_write, seconds_passed))
 
 my_file = Path(file_name)
 if my_file.is_file():
